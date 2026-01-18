@@ -34,11 +34,12 @@ export default function InventoryChart({ data }: { data: any[] }) {
           />
           <Area 
             type="monotone" 
-            dataKey="value" 
+            dataKey="products" // <--- මෙතන 'value' තිබුණොත් දත්ත පෙන්නන්නේ නැහැ. 'products' විය යුතුමයි.
             stroke="#8b5cf6" 
             fill="url(#colorValue)" 
-            strokeWidth={3}
-            animationDuration={1200}
+            strokeWidth={2}
+            dot={{ fill: "#8b5cf6", r: 4, strokeWidth: 2, stroke: "#fff" }} 
+            activeDot={{ r: 6, strokeWidth: 0 }}
           />
         </AreaChart>
       </ResponsiveContainer>
