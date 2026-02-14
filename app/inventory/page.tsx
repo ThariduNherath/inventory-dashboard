@@ -101,49 +101,61 @@ export default async function InventoryPage({
                     </table>
                 </div>
 
-                {/* Pagination */}
+                {/* Pagination UI - Matched with Image */}
 {totalPages > 1 && (
-    <div className="flex justify-center items-center gap-3 mt-10 pb-10">
+    <div className="flex justify-center items-center gap-2 mt-12 pb-10">
         
         {/* Previous Button */}
         <Link 
             href={`/inventory?q=${q}&page=${currentPage - 1}`}
-            className={`px-4 py-2 text-sm font-semibold rounded-xl border transition-all ${
+            className={`flex items-center gap-1 px-4 py-2 text-sm font-medium rounded-lg transition-all ${
                 currentPage <= 1 
-                ? 'pointer-events-none opacity-40 bg-gray-100 border-gray-200 text-gray-400' 
-                : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50 shadow-sm'
+                ? 'pointer-events-none text-gray-300 bg-gray-50' 
+                : 'text-gray-600 hover:bg-gray-100 border border-transparent'
             }`}
         >
-            Previous
+            <span className="text-lg">‹</span> Previous
         </Link>
 
-        {/* Page Numbers */}
-        <div className="flex gap-2">
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-                <Link 
-                    key={p} 
-                    href={`/inventory?q=${q}&page=${p}`} 
-                    className={`w-10 h-10 flex items-center justify-center rounded-xl font-bold text-sm transition-all shadow-sm ${
-                        p === currentPage 
-                        ? 'bg-purple-600 text-white border border-purple-600' 
-                        : 'bg-white border border-gray-200 text-gray-600 hover:border-purple-300 hover:text-purple-600'
-                    }`}
-                >
-                    {p}
-                </Link>
-            ))}
+        {/* Page Numbers Logic */}
+        <div className="flex items-center gap-1">
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => {
+                // පින්තූරයේ තියෙන විදිහට මුල් පිටු 3 සහ අන්තිම පිටුව පමණක් පෙන්වීමට:
+                if (p === 1 || p === totalPages || (p >= currentPage - 1 && p <= currentPage + 1)) {
+                    return (
+                        <Link 
+                            key={p} 
+                            href={`/inventory?q=${q}&page=${p}`} 
+                            className={`w-9 h-9 flex items-center justify-center rounded-lg text-sm font-semibold transition-all ${
+                                p === currentPage 
+                                ? 'bg-[#7C3AED] text-white shadow-sm' // Purple Active State
+                                : 'text-gray-600 hover:bg-gray-100 border border-gray-200'
+                            }`}
+                        >
+                            {p}
+                        </Link>
+                    );
+                }
+                
+                // මැදට තිත් (...) දැමීම
+                if (p === currentPage - 2 || p === currentPage + 2) {
+                    return <span key={p} className="px-2 text-gray-400">...</span>;
+                }
+
+                return null;
+            })}
         </div>
 
         {/* Next Button */}
         <Link 
             href={`/inventory?q=${q}&page=${currentPage + 1}`}
-            className={`px-4 py-2 text-sm font-semibold rounded-xl border transition-all ${
+            className={`flex items-center gap-1 px-4 py-2 text-sm font-medium rounded-lg transition-all ${
                 currentPage >= totalPages 
-                ? 'pointer-events-none opacity-40 bg-gray-100 border-gray-200 text-gray-400' 
-                : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50 shadow-sm'
+                ? 'pointer-events-none text-gray-300 bg-gray-50' 
+                : 'text-gray-600 hover:bg-gray-100 border border-gray-200'
             }`}
         >
-            Next
+            Next <span className="text-lg">›</span>
         </Link>
     </div>
 )}
