@@ -9,7 +9,7 @@ export default async function DashboardPage() {
     const user = await getCurrentUser();
     if (!user) return null;
 
-    // 1. දත්ත ලබා ගැනීම (updatedAt පාවිච්චි කර ඇත සහ සියලුම දත්ත පෙන්වයි)
+    // 1. දත්ත ලබා ගැනීම
     const allProducts = await sql`SELECT name, stock, price, "updatedAt" FROM "Product"`;
     
     // Logic Calculations
@@ -26,7 +26,7 @@ export default async function DashboardPage() {
     const lowStockP = totalProducts > 0 ? Math.round((lowStockCount / totalProducts) * 100) : 0;
     const outOfStockP = totalProducts > 0 ? Math.round((outOfStockCount / totalProducts) * 100) : 0;
 
-    // 2. Chart Data Fix (updatedAt භාවිතා කර පසුගිය දින 30 දත්ත ලබා ගැනීම)
+    // 2. Chart Data Fix
     const chartData = await sql`
         SELECT 
             TO_CHAR(date_trunc('day', "updatedAt"), 'MM/DD') as name, 
@@ -64,7 +64,7 @@ export default async function DashboardPage() {
                     </div>
                 </div>
 
-                {/* Key Metrics Cards - Responsive Grid */}
+                {/* Key Metrics Cards */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6 md:mb-8">
                     {[
                         { 
@@ -122,7 +122,7 @@ export default async function DashboardPage() {
 
                 {/* Main Content Grid */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
-                    {/* Chart Section */}
+                    {/* Activity Overview */}
                     <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-5 md:p-8 border border-gray-200/60 shadow-xl hover:shadow-2xl hover:shadow-purple-100/20 transition-all duration-300">
                         <div className="flex items-center justify-between mb-6">
                             <h2 className="text-lg font-bold text-gray-800">Activity Overview</h2>
@@ -156,10 +156,13 @@ export default async function DashboardPage() {
                                     <circle cx="50%" cy="50%" r="45%" stroke="#f3f4f6" strokeWidth="10" fill="transparent" />
                                     <circle 
                                         cx="50%" cy="50%" r="45%" 
-                                        stroke="url(#healthGradient)" strokeWidth="10" fill="transparent" 
+                                        stroke={inStockP > 0 ? "url(#healthGradient)" : "transparent"} 
+                                        strokeWidth={inStockP > 0 ? "10" : "0"} 
+                                        fill="transparent" 
                                         strokeDasharray="283" 
-                                        strokeDashoffset={283 - (283 * inStockP / 100)} 
+                                        strokeDashoffset={283 - (283 * (inStockP || 0) / 100)} 
                                         strokeLinecap="round" 
+                                        className="transition-all duration-1000 ease-out"
                                     />
                                     <defs>
                                         <linearGradient id="healthGradient" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -230,7 +233,7 @@ export default async function DashboardPage() {
                                         const statusColor = Number(p.stock) > 10 ? 'bg-green-100 text-green-800' : 
                                                            Number(p.stock) > 0 ? 'bg-amber-100 text-amber-800' : 
                                                            'bg-red-100 text-red-800';
-                                        const totalValue = Math.round(Number(p.price) * Number(p.stock));
+                                        const prodValue = Math.round(Number(p.price) * Number(p.stock));
                                         
                                         return (
                                             <div 
@@ -257,7 +260,7 @@ export default async function DashboardPage() {
                                                     <span className="text-gray-400 text-xs ml-1">units</span>
                                                 </div>
                                                 <div className="col-span-2">
-                                                    <span className="font-bold text-gray-900">${totalValue.toLocaleString()}</span>
+                                                    <span className="font-bold text-gray-900">${prodValue.toLocaleString()}</span>
                                                 </div>
                                             </div>
                                         );
