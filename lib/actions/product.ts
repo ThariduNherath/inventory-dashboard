@@ -1,60 +1,62 @@
 "use server";
 
-import { sql } from "@/lib/db";
+import { sql } from "@/lib/db"; 
 import { revalidatePath } from "next/cache";
 import { getCurrentUser } from "@/lib/auth";
 import { redirect } from "next/navigation";
 
-// --- Product එකක් එකතු කිරීම ---
-export async function createProduct(formData: FormData) {
+// FIX: prevState එක සම්පූර්ණයෙන්ම අයින් කර formData එක පළමු parameter එක ලෙස සැකසීම.
+// එවිට Server Component එකක සිට direct action එකක් ලෙස භාවිතා කළ හැක.
+export async function createProduct(formData: FormData): Promise<void> {
   const user = await getCurrentUser();
   if (!user) throw new Error("Unauthorized");
 
   const name = formData.get("name") as string;
-  const skuInput = formData.get("sku") as string; // මුලින්ම input එක ගන්න
-  const stock = parseInt(formData.get("quantity") as string);
-  const price = parseFloat(formData.get("price") as string);
-  const lowStockAt = parseInt(formData.get("lowStockAt") as string);
+  const skuInput = formData.get("sku") as string; 
+  const quantity = parseInt(formData.get("quantity") as string) || 0;
+  const price = parseFloat(formData.get("price") as string) || 0;
+  const lowStockAt = parseInt(formData.get("lowStockAt") as string) || 0;
 
-  // 🔥 විසඳුම: SKU එක හිස් නම් (trim කළ පසු) එය NULL ලෙස සලකන්න.
-  // Database එකේ Unique Constraint එක NULL අගයන්ට බලපාන්නේ නැත.
+  // SKU එක හිස් නම් unique key error එකක් නොවීමට NULL කිරීම
   const sku = skuInput?.trim() === "" ? null : skuInput;
+  let isSuccess = false;
 
   try {
     await sql`
       INSERT INTO "Product" (
-        id, name, sku, price, stock, "lowStockAt", "userId", "updatedAt"
+        id, name, sku, price, quantity, "lowStockAt", "userId", "updatedAt"
       )
       VALUES (
         ${crypto.randomUUID()}, 
         ${name}, 
         ${sku}, 
         ${price}, 
-        ${stock}, 
+        ${quantity}, 
         ${lowStockAt}, 
         ${user.id}, 
         NOW()
       )
     `;
+    isSuccess = true;
   } catch (error: any) {
     console.error("Database Insert Error:", error);
-    
-    // Duplicate SKU error එකක් ආවොත් ඒක හඳුනාගෙන message එකක් යැවිය හැක
+    // Unique Constraint (Duplicate SKU) Error එකක් ආවොත් handle කිරීම
     if (error.code === '23505') {
-        return { error: "This SKU is already in use. Please use a different one." };
+        throw new Error("This SKU is already in use. Please use a different one.");
     }
-    
-    return { error: "Failed to add product" };
+    throw new Error("Failed to add product. Please try again.");
   }
 
-  // Inventory සහ Dashboard පිටු අලුත් කිරීම
-  revalidatePath("/inventory");
-  revalidatePath("/dashboard");
-  redirect("/inventory");
+  // Next.js 16 වල redirect කරන්නේ try-catch එකෙන් පිටතයි
+  if (isSuccess) {
+    revalidatePath("/inventory");
+    revalidatePath("/dashboard");
+    redirect("/inventory");
+  }
 }
 
 // --- Product එකක් මැකීම ---
-export async function deleteProduct(formData: FormData) {
+export async function deleteProduct(formData: FormData): Promise<void> {
   const id = formData.get("id") as string;
   const user = await getCurrentUser();
   if (!user || !id) return;

@@ -1,7 +1,7 @@
 import Sidebar from "@/components/sidebar";
 import { getCurrentUser } from "@/lib/auth";
 import Link from "next/link";
-import { createProduct } from "@/lib/actions/product";
+import { createProduct } from "@/lib/actions/product"; // Fix කරන ලද Action එක Import කිරීම
 
 export default async function AddProductPage() {
   const user = await getCurrentUser();
@@ -40,12 +40,10 @@ export default async function AddProductPage() {
 
         <div className="max-w-2xl animate-slide-up">
           <div className="bg-white/90 backdrop-blur-sm rounded-2xl border border-gray-200/60 p-8 shadow-xl shadow-purple-100/20 hover:shadow-2xl hover:shadow-purple-100/30 transition-all duration-300">
-            <form
-              action={async (formData: FormData) => {
-                await createProduct(formData);
-              }}
-              className="space-y-8"
-            >
+            
+            {/* FIX: inline functions කිසිවක් නැත. කෙළින්ම action එකට createProduct ලබා දීම */}
+            <form action={createProduct} className="space-y-8">
+              
               {/* Product Name */}
               <div className="group">
                 <label className="block text-sm font-semibold text-gray-700 mb-3 tracking-wide">
