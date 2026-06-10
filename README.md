@@ -1,36 +1,192 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Inventory Pro
 
-## Getting Started
+A modern inventory management application built with Next.js, Prisma, PostgreSQL, and Stackframe auth.
 
-First, run the development server:
+## Overview
+
+This project provides a full inventory workflow with:
+
+- Landing page and auth flow
+- Dashboard with inventory analytics
+- Product listing with search, pagination, and delete support
+- Add product form with stock threshold settings
+- User account settings via Stackframe
+- PostgreSQL integration via raw SQL
+- Prisma schema & migration support
+- Recharts analytics charts for activity visualization
+
+## Project structure
+
+```text
+app/
+  layout.tsx
+  page.tsx
+  add-product/page.tsx
+  dashboard/page.tsx
+  inventory/page.tsx
+  settings/page.tsx
+  sign-in/page.tsx
+  handler/[...stack]/page.tsx
+components/
+  sidebar.tsx
+  inventory-chart.tsx
+  products-chart.ts
+lib/
+  auth.ts
+  db.ts
+  prisma.ts
+  actions/product.ts
+prisma/
+  schema.prisma
+  seed.ts
+  migrations/
+stack/
+  client.tsx
+  server.tsx
+next.config.ts
+package.json
+tsconfig.json
+README.md
+```
+
+## Pages and routes
+
+- `/` — Marketing landing page
+- `/sign-in` — Login page using Stackframe auth
+- `/dashboard` — Inventory analytics and activity overview
+- `/inventory` — Product list with search, pagination, delete
+- `/add-product` — Add new product form
+- `/settings` — User account settings page
+- `/handler/sign-in` — Stackframe auth handler route
+
+## Setup
+
+### 1. Install dependencies
+
+```bash
+npm install
+```
+
+### 2. Configure environment variables
+
+Create a `.env.local` file in the project root with:
+
+```env
+DATABASE_URL=postgresql://username:password@host:port/database
+```
+
+### 3. Prisma setup
+
+Generate the Prisma client and apply migrations:
+
+```bash
+npx prisma generate
+npx prisma migrate dev --name init
+```
+
+### 4. Start development server
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Then open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Available scripts
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- `npm run dev` — Start the Next.js development server
+- `npm run build` — Generate Prisma client and build the app
+- `npm start` — Start the production server after build
+- `npm run lint` — Run ESLint
 
-## Learn More
+## Database and Prisma
 
-To learn more about Next.js, take a look at the following resources:
+### `prisma/schema.prisma`
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Defines a `Product` model with:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- `id`: primary key
+- `userId`: owner user ID
+- `name`: product name
+- `sku`: optional unique code
+- `price`: decimal value
+- `quantity`: stock count
+- `lowStockAt`: low-stock threshold
+- `createAt`: created timestamp
+- `updatedAt`: updated timestamp
 
-## Deploy on Vercel
+Indexes:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- `@@index([userId, name])`
+- `@@index([createAt])`
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Authentication
+
+Authentication uses `@stackframe/stack`:
+
+- `stack/client.tsx` sets up client auth
+- `stack/server.tsx` sets up server auth
+- `app/handler/[...stack]/page.tsx` renders auth handler
+- `lib/auth.ts` protects pages by redirecting unauthenticated users to `/handler/sign-in`
+
+## Data access
+
+### `lib/db.ts`
+
+- Uses `@neondatabase/serverless` to expose `sql`
+- Requires `DATABASE_URL`
+
+### `lib/actions/product.ts`
+
+- `createProduct(formData)` adds a new product
+- `deleteProduct(formData)` removes a product
+- Both actions revalidate `/inventory` and `/dashboard`
+
+## UI components
+
+### `components/sidebar.tsx`
+
+- Sidebar navigation for authenticated pages
+- Includes links to Dashboard, Inventory, Add Product, Settings
+- Renders user button from Stackframe
+
+### `components/inventory-chart.tsx`
+
+- Client-side Recharts area chart
+- Displays product activity by date
+
+### `components/products-chart.ts`
+
+- Present in project but currently empty
+
+## Notes
+
+- Dashboard and inventory pages use raw SQL queries instead of Prisma queries.
+- `app/add-product/page.tsx` submits directly to the server action `createProduct`.
+- `app/inventory/page.tsx` supports query-based search and pagination.
+- `app/settings/page.tsx` uses Stackframe `AccountSettings`.
+
+## Deployment
+
+Build and run in production mode:
+
+```bash
+npm run build
+npm start
+```
+
+Ensure `DATABASE_URL` is configured in the production environment.
+
+## Troubleshooting
+
+- If database connection fails, verify `DATABASE_URL` values.
+- If auth fails, confirm `/handler/sign-in` is reachable and Stackframe is correctly configured.
+- If Prisma client is missing, run `npx prisma generate`.
+
+## Recommended improvements
+
+- Replace raw SQL with Prisma queries for consistency
+- Implement user-specific product filtering by `userId`
+- Add validation and error UI on forms
+- Complete or remove `components/products-chart.ts`
+- Add tests for routes and actions
